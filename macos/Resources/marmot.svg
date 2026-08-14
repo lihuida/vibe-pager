@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!--
+    Vibe Remote marmot
+    Source of truth for editing: macos/Resources/marmot.png
+    This SVG is a matching outline. After changing the PNG, run:
+      macos/.build/make-icons "$(pwd)"
+  -->
+  <rect id="background" width="1024" height="1024" rx="286" ry="286" fill="#000"/>
+
+  <g id="silhouette" fill="#fff">
+    <ellipse id="head" cx="512" cy="430" rx="268" ry="248"/>
+    <ellipse id="cheek-left" cx="286" cy="468" rx="118" ry="128"/>
+    <ellipse id="cheek-right" cx="738" cy="468" rx="118" ry="128"/>
+    <ellipse id="ear-left" cx="332" cy="198" rx="44" ry="40"/>
+    <ellipse id="ear-right" cx="692" cy="198" rx="44" ry="40"/>
+    <path id="tuft" d="M430 188
+      C448 148 478 138 512 150
+      C546 138 576 148 594 188
+      C572 176 542 170 512 176
+      C482 170 452 176 430 188Z"/>
+    <ellipse id="paw-left" cx="368" cy="708" rx="58" ry="40"/>
+    <ellipse id="paw-right" cx="656" cy="708" rx="58" ry="40"/>
+    <path id="horizon" d="M168 760
+      Q512 708 856 760
+      Q512 820 168 760Z"/>
+  </g>
+
+  <g id="features" fill="#000" stroke="#000" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse id="eye-left" cx="400" cy="372" rx="16" ry="26"/>
+    <ellipse id="eye-right" cx="624" cy="372" rx="16" ry="26"/>
+    <ellipse id="nose" cx="512" cy="430" rx="36" ry="22"/>
+    <path id="philtrum" d="M512 452 V486" fill="none" stroke-width="12"/>
+    <path id="mouth" d="M448 500 Q478 534 512 512 Q546 534 576 500" fill="none" stroke-width="12"/>
+    <rect id="tooth-socket" x="490" y="508" width="44" height="36" rx="4"/>
+  </g>
+
+  <rect id="tooth" x="496" y="510" width="32" height="28" rx="4"
+        fill="#fff" stroke="#000" stroke-width="3.5"/>
+
+  <g id="claws" fill="none" stroke="#000" stroke-width="7" stroke-linecap="round">
+    <path id="claws-left" d="M342 694 V720 M364 694 V720 M386 694 V720"/>
+    <path id="claws-right" d="M638 694 V720 M660 694 V720 M682 694 V720"/>
