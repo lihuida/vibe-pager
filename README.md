@@ -1,6 +1,6 @@
 # Vibe Pager
 
-Vibe Coding 的传呼机：把飞书、钉钉、微信、Telegram 接到本机 Cursor / Codex，离开电脑也能收完工消息、下下一轮指令。
+Vibe Coding 的传呼机：把飞书、钉钉、微信、Telegram 接到本机 Cursor / Codex，离开电脑也能收到 Cursor / Codex 的完工消息、并发送下一轮指令。
 
 要求 **macOS 13+**。
 
