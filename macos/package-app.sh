@@ -68,6 +68,12 @@ else
 fi
 lipo -info "$OUT"
 
+if [[ ! -f "$ROOT/macos/Resources/StatusItem@2x.png" || ! -f "$ROOT/macos/Resources/StatusItem.png" ]]; then
+  echo "generating menu bar icons…"
+  swiftc -sdk "$SDK" -framework AppKit -o "$BUILD/make-icons" "$ROOT/macos/make-icons.swift"
+  "$BUILD/make-icons" "$ROOT"
+fi
+
 rm -rf "$APP_DIR" "$ROOT/dist/VibeRemote.app"
 mkdir -p "$BIN_DIR" "$RES_DIR"
 cp "$OUT" "$BIN_DIR/VibePager"

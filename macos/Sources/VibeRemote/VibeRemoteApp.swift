@@ -2,13 +2,14 @@ import AppKit
 import SwiftUI
 
 @main
-struct VibeRemoteApp: App {
-    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+enum VibePagerMain {
+    static let delegate = AppDelegate()
 
-    var body: some Scene {
-        Settings {
-            EmptyView()
-        }
+    static func main() {
+        let app = NSApplication.shared
+        app.setActivationPolicy(.accessory)
+        app.delegate = delegate
+        app.run()
     }
 }
 
@@ -19,18 +20,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var eventMonitor: Any?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        ProcessInfo.processInfo.disableAutomaticTermination("menu bar extra")
+        ProcessInfo.processInfo.disableSuddenTermination()
         ProcessInfo.processInfo.processName = "Vibe Pager"
+        NSApp.setActivationPolicy(.accessory)
         NSApp.appearance = NSAppearance(named: .aqua)
 
         let store = AppStore()
         self.store = store
 
-        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        item.isVisible = true
         if let button = item.button {
-            button.image = Self.statusItemImage()
-            button.title = ""
+            let image = Self.statusItemImage()
+            button.image = image
+            button.imageScaling = .scaleProportionallyDown
             button.toolTip = "Vibe Pager"
-            button.imagePosition = .imageOnly
+            if image.size.width < 8 {
+                button.title = "Vibe"
+                button.imagePosition = .noImage
+            } else {
+                button.title = ""
+                button.imagePosition = .imageOnly
+            }
             button.target = self
             button.action = #selector(togglePanel)
         }
@@ -62,50 +74,99 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard let panel = self?.panel, panel.isVisible else { return }
             panel.orderOut(nil)
         }
+
+        if shouldRevealOnLaunch {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
+                self?.showPanel()
+            }
+        }
+    }
+
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        false
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        showPanel()
+        return false
+    }
+
+    private var shouldRevealOnLaunch: Bool {
+        if CommandLine.arguments.contains("--reveal") {
+            return true
+        }
+        let key = "didRevealPanelOnce"
+        if !UserDefaults.standard.bool(forKey: key) {
+            UserDefaults.standard.set(true, forKey: key)
+            return true
+        }
+        return false
     }
 
     private static func statusItemImage() -> NSImage {
-        let names = ["StatusItem@2x", "StatusItem"]
-        for name in names {
+        if let named = NSImage(named: "StatusItem") {
+            return configuredStatusImage(named)
+        }
+        for name in ["StatusItem", "StatusItem@2x"] {
             if let url = Bundle.main.url(forResource: name, withExtension: "png"),
                let image = NSImage(contentsOf: url) {
-                let pixels = (image.representations.first as? NSBitmapImageRep)
-                let aspect = pixels.map { CGFloat($0.pixelsWide) / CGFloat(max($0.pixelsHigh, 1)) } ?? 1
-                let height: CGFloat = 18
-                image.size = NSSize(width: (height * aspect).rounded(.toNearestOrAwayFromZero), height: height)
-                image.isTemplate = true
-                return image
+                return configuredStatusImage(image)
             }
         }
-        let fallback = NSImage(systemSymbolName: "hare", accessibilityDescription: "Vibe Pager")
-        fallback?.isTemplate = true
-        return fallback ?? NSImage()
+        if let symbol = NSImage(systemSymbolName: "hare.fill", accessibilityDescription: "Vibe Pager") {
+            let configured = symbol.withSymbolConfiguration(.init(pointSize: 14, weight: .medium)) ?? symbol
+            configured.isTemplate = true
+            return configured
+        }
+        return NSImage(size: NSSize(width: 18, height: 18))
+    }
+
+    private static func configuredStatusImage(_ image: NSImage) -> NSImage {
+        image.isTemplate = true
+        let pixels = image.representations.first as? NSBitmapImageRep
+        let aspect = pixels.map { CGFloat($0.pixelsWide) / CGFloat(max($0.pixelsHigh, 1)) } ?? 1
+        let height: CGFloat = 18
+        let width = max(18, (height * aspect).rounded(.toNearestOrAwayFromZero))
+        image.size = NSSize(width: width, height: height)
+        return image
     }
 
     @objc private func togglePanel() {
-        guard let panel, let button = statusItem?.button, let buttonWindow = button.window else { return }
-        if panel.isVisible {
-            panel.orderOut(nil)
+        if panel?.isVisible == true {
+            panel?.orderOut(nil)
             return
         }
-        let buttonRect = button.convert(button.bounds, to: nil)
-        let screenRect = buttonWindow.convertToScreen(buttonRect)
-        var origin = NSPoint(
-            x: screenRect.midX - panel.frame.width / 2,
-            y: screenRect.minY - panel.frame.height - 6
-        )
-        if let screen = buttonWindow.screen ?? NSScreen.main {
-            let visible = screen.visibleFrame
-            origin.x = min(max(origin.x, visible.minX + 8), visible.maxX - panel.frame.width - 8)
-            if origin.y < visible.minY {
-                origin.y = screenRect.maxY + 6
+        showPanel()
+    }
+
+    private func showPanel() {
+        guard let panel else { return }
+        if let button = statusItem?.button, let buttonWindow = button.window {
+            let buttonRect = button.convert(button.bounds, to: nil)
+            let screenRect = buttonWindow.convertToScreen(buttonRect)
+            var origin = NSPoint(
+                x: screenRect.midX - panel.frame.width / 2,
+                y: screenRect.minY - panel.frame.height - 6
+            )
+            if let screen = buttonWindow.screen ?? NSScreen.main {
+                let visible = screen.visibleFrame
+                origin.x = min(max(origin.x, visible.minX + 8), visible.maxX - panel.frame.width - 8)
+                if origin.y < visible.minY {
+                    origin.y = screenRect.maxY + 6
+                }
             }
+            panel.setFrameOrigin(origin)
+        } else if let screen = NSScreen.main {
+            let visible = screen.visibleFrame
+            panel.setFrameOrigin(NSPoint(
+                x: visible.maxX - panel.frame.width - 12,
+                y: visible.maxY - panel.frame.height - 8
+            ))
         }
         Task { @MainActor in
             store?.refreshPermissions()
             store?.refreshInstalled()
         }
-        panel.setFrameOrigin(origin)
         panel.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
